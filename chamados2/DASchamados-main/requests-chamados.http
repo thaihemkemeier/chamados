@@ -1,0 +1,141 @@
+### Pré-requisito: crie 1 cliente, 1 categoria e 1 técnico (ids = 1)
+POST http://localhost:8080/clientes
+Content-Type: application/json
+
+{"nome":"Ana Souza","email":"ana@exemplo.com","telefone":"47999999999"}
+
+###
+POST http://localhost:8080/categorias
+Content-Type: application/json
+
+{"nome":"Hardware","descricao":"Problemas de equipamento"}
+
+###
+POST http://localhost:8080/tecnicos
+Content-Type: application/json
+
+{"nome":"Maria","email":"maria@exemplo.com","perfil":"TECNICO"}
+
+### ---------- 13.3 CHAMADO ----------
+### Criar -> 201 (nasce ABERTO, dataAbertura automática)
+POST http://localhost:8080/chamados
+Content-Type: application/json
+
+{"titulo":"Computador não inicia","descricao":"Sem imagem no monitor","prioridade":"ALTA","clienteId":1,"categoriaId":1}
+
+### Cliente inexistente -> 404
+POST http://localhost:8080/chamados
+Content-Type: application/json
+
+{"titulo":"X","descricao":"Y","prioridade":"BAIXA","clienteId":999,"categoriaId":1}
+
+### Dados inválidos -> 400
+POST http://localhost:8080/chamados
+Content-Type: application/json
+
+{"titulo":"","descricao":"","prioridade":"ALTA","clienteId":1,"categoriaId":1}
+
+### Prioridade inexistente -> 400
+POST http://localhost:8080/chamados
+Content-Type: application/json
+
+{"titulo":"X","descricao":"Y","prioridade":"URGENTE","clienteId":1,"categoriaId":1}
+
+### Buscar -> 200 (com comentários)
+GET http://localhost:8080/chamados/1
+
+### Buscar inexistente -> 404
+GET http://localhost:8080/chamados/99999
+
+### Atualizar -> 200
+PUT http://localhost:8080/chamados/1
+Content-Type: application/json
+
+{"titulo":"Computador não inicia (atualizado)","descricao":"Sem imagem e sem som","prioridade":"CRITICA","categoriaId":1}
+
+### ---------- 13.4 REGRAS ----------
+### Atribuir técnico -> 200
+PATCH http://localhost:8080/chamados/1/atribuir
+Content-Type: application/json
+
+{"tecnicoId":1}
+
+### Transição válida ABERTO -> EM_ATENDIMENTO -> 200
+PATCH http://localhost:8080/chamados/1/status
+Content-Type: application/json
+
+{"status":"EM_ATENDIMENTO"}
+
+### Transição inválida EM_ATENDIMENTO -> ABERTO -> 409
+PATCH http://localhost:8080/chamados/1/status
+Content-Type: application/json
+
+{"status":"ABERTO"}
+
+### Fechar -> 200 (preenche dataFechamento)
+PATCH http://localhost:8080/chamados/1/status
+Content-Type: application/json
+
+{"status":"FECHADO"}
+
+### Alterar chamado fechado -> 409
+PATCH http://localhost:8080/chamados/1/status
+Content-Type: application/json
+
+{"status":"EM_ATENDIMENTO"}
+
+### Atribuir em chamado fechado -> 409
+PATCH http://localhost:8080/chamados/1/atribuir
+Content-Type: application/json
+
+{"tecnicoId":1}
+
+### Atualizar chamado fechado -> 409
+PUT http://localhost:8080/chamados/1
+Content-Type: application/json
+
+{"titulo":"X","descricao":"Y","prioridade":"BAIXA","categoriaId":1}
+
+### ---------- 13.5 FILTROS E PAGINAÇÃO ----------
+GET http://localhost:8080/chamados
+
+###
+GET http://localhost:8080/chamados?status=FECHADO
+
+###
+GET http://localhost:8080/chamados?status=FECHADO&prioridade=CRITICA&clienteId=1
+
+###
+GET http://localhost:8080/chamados?page=0&size=5&sort=prioridade,desc
+
+### Filtro inválido -> 400
+GET http://localhost:8080/chamados?status=XYZ
+
+### Chamados de um cliente -> 200
+GET http://localhost:8080/clientes/1/chamados
+
+### Cliente inexistente -> 404
+GET http://localhost:8080/clientes/999/chamados
+
+### ---------- 13.6 COMENTÁRIOS ----------
+### Comentar -> 201
+POST http://localhost:8080/chamados/1/comentarios
+Content-Type: application/json
+
+{"texto":"Troquei a fonte de alimentação.","autor":"Maria"}
+
+### Listar comentários -> 200
+GET http://localhost:8080/chamados/1/comentarios
+
+### Comentário em chamado inexistente -> 404
+POST http://localhost:8080/chamados/999/comentarios
+Content-Type: application/json
+
+{"texto":"x","autor":"y"}
+
+### ---------- EXCLUSÃO ----------
+### Excluir cliente que possui chamados -> 409
+DELETE http://localhost:8080/clientes/1
+
+### Excluir chamado (apaga os comentários antes) -> 204
+DELETE http://localhost:8080/chamados/1
